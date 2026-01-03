@@ -9,7 +9,7 @@ if not api_key:
     # I'll hardcode it just for this test script to be 100% sure
     # api_key = "..."
 
-genai.configure(api_key=api_key)
+ genai.configure(api_key=api_key)
 
 print("Listing available models...")
 try:

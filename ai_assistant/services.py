@@ -2,17 +2,12 @@ import google.generativeai as genai
 from django.conf import settings
 import logging
 from .tools import tool_get_platform_stats, tool_list_categories, tool_search_courses, tool_get_my_progress
+from courses.models import Lesson
 
 logger = logging.getLogger(__name__)
 
 class AITutorService:
-    """
-    Core AI Service for the Course Tutor feature.
-    
-    Architecture Note:
-    We use a Class-based approach here to maintain state (user, course) 
-    and to allow for easy extension (e.g., adding more context sources later).
-    """
+    # ... (init and config methods remain same) ...
     def __init__(self, user, course=None):
         self.user = user
         self.course = course
@@ -22,7 +17,7 @@ class AITutorService:
         if not settings.GEMINI_API_KEY:
              logger.error("GEMINI_API_KEY is not set.")
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        
+
     def get_model(self):
         # We use 'gemini-flash-latest' which corresponds to the latest Flash model
         return genai.GenerativeModel(
@@ -49,15 +44,13 @@ class AITutorService:
     def build_course_context(self):
         """
         Fetches all lessons and transcripts, formatting them as XML.
-        
-        Why XML?
-        It allows the AI to clearly distinguish between 'notes' and 'transcript'
-        and reference specific lesson IDs in its answers.
         """
         if not self.course:
             return ""
             
-        lessons = self.course.lessons.exclude(content="", transcript="")
+        # FIX: Access lessons via Module relationship
+        lessons = Lesson.objects.filter(module__course=self.course).exclude(content="", transcript="")
+        
         context_xml = f"<course_context id='{self.course.id}' title='{self.course.title}'>\n"
         
         for lesson in lessons:
