@@ -7,7 +7,7 @@ api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     # Fallback if dotenv doesn't load for some reason (though it should)
     # I'll hardcode it just for this test script to be 100% sure
-    api_key = "AIzaSyC2dS_kYHe6VsquWeKQsScsLc8FzMkZNJQ"
+    # api_key = "..."
 
 genai.configure(api_key=api_key)
 

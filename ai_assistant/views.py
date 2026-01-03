@@ -77,3 +77,4 @@ class ChatHistoryView(APIView):
     def get(self, request, course_id):
         chat_obj = get_object_or_404(ChatHistory, user=request.user, course_id=course_id)
         return Response(chat_obj.history_json)
+ 
