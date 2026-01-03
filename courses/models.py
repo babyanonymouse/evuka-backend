@@ -324,6 +324,7 @@ class Lesson(models.Model):
                                      blank=True)
     title = models.CharField(max_length=255)
     content = models.TextField(help_text="Markdown supported")
+    transcript = models.TextField(blank=True, help_text="Video transcript for AI indexing")
     resources = models.JSONField(default=dict, blank=True)
     video_file = models.FileField(upload_to='lesson_videos/', blank=True, null=True)
     order = models.PositiveIntegerField(default=0)

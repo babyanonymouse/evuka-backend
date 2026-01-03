@@ -1,7 +1,7 @@
 from django.urls import path
-from . import views
+from .views import AskAIView, ChatHistoryView
 
 urlpatterns = [
-    path("history/<str:course_slug>/", views.get_chat_history, name="ai-get-history"),
-    path("ask/", views.ask_assistant, name="ai-ask-assistant"),
+    path('ask/', AskAIView.as_view(), name='ask-ai'),
+    path('history/<int:course_id>/', ChatHistoryView.as_view(), name='get-chat-history'),
 ]
