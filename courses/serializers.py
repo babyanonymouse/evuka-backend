@@ -82,7 +82,7 @@ class CourseListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = (
-            "slug", "title", "thumbnail", "short_description",
+            "id", "slug", "title", "thumbnail", "short_description",
             "instructor_name", "is_enrolled", "rating_avg",
             "price", "num_students", "category", "level",
             "status", "status_display", "progress"

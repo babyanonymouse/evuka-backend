@@ -6,6 +6,11 @@ interface Message {
   content: string;
 }
 
+interface Course {
+  id: number;
+  title: string;
+}
+
 function App() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -15,12 +20,20 @@ function App() {
   ]);
   const [input, setInput] = useState("");
   const [courseId, setCourseId] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Fetch courses on mount
+  useEffect(() => {
+    axios.get("/courses/") // Relative path (proxied) or full URL if CORS allowed
+      .then(res => setCourses(res.data))
+      .catch(err => console.error("Failed to fetch courses:", err));
+  }, []);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -32,7 +45,7 @@ function App() {
 
     try {
       const payload: any = { message: userMsg.content };
-      if (courseId.trim()) payload.course_id = courseId;
+      if (courseId) payload.course_id = courseId;
 
       console.log("Sending payload:", payload);
       const res = await axios.post("/ai/ask/", payload);
@@ -68,15 +81,20 @@ function App() {
         <h1 className="text-xl font-bold text-blue-600">Evuka AI Tester</h1>
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-gray-600">
-            Course ID (Optional):
+            Context:
           </label>
-          <input
-            type="text"
-            placeholder="Ex: 1"
+          <select
             value={courseId}
             onChange={(e) => setCourseId(e.target.value)}
-            className="border rounded px-2 py-1 w-20 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+            className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="">General System (Platform)</option>
+            {courses.map(course => (
+              <option key={course.id} value={course.id}>
+                {course.title}
+              </option>
+            ))}
+          </select>
         </div>
       </header>
 
