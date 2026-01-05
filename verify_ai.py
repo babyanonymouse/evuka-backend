@@ -34,7 +34,7 @@ def main():
     
     # 2. Test Course Mode
     print("2. Testing Course Tutor (Context-Aware)...")
-    course_id = input("   Enter a Course ID to test (or press Enter to skip): ").strip()
+    course_id = input("   Enter a Course name to test (or press Enter to skip): ").strip()
     
     if course_id:
         q2 = input("   What would you like to ask about this course? (Default: Summarize this course): ").strip()
