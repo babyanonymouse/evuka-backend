@@ -81,7 +81,7 @@ function App() {
         <h1 className="text-xl font-bold text-blue-600">Evuka AI Tester</h1>
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-gray-600">
-            Context:
+            Course Context:
           </label>
           <select
             value={courseId}
