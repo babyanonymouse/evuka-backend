@@ -4,7 +4,7 @@ from django.utils.text import slugify
 from django.utils import timezone
 
 from courses.models import (
-    Course, Module, Lesson, GlobalCategory, GlobalLevel,
+    Course, Module, Lesson, GlobalCategory, GlobalLevel, GlobalSubCategory,
 )
 from organizations.models import Organization, OrgCategory, OrgLevel
 from users.models import CreatorProfile
@@ -30,9 +30,22 @@ class Command(BaseCommand):
             name="Digital Storytelling", slug=slugify("Digital Storytelling"),
             defaults={"description": "Courses about creating digital stories."}
         )
+        subcat1, _ = GlobalSubCategory.objects.get_or_create(
+            category=cat1,
+            name="Video Production",
+            slug=slugify("Video Production"),
+            defaults={"description": "Basics of video."}
+        )
+
         cat2, _ = GlobalCategory.objects.get_or_create(
             name="Creative Writing", slug=slugify("Creative Writing"),
             defaults={"description": "Courses to enhance writing and storytelling."}
+        )
+        subcat2, _ = GlobalSubCategory.objects.get_or_create(
+            category=cat2,
+            name="Fiction",
+            slug=slugify("Fiction"),
+            defaults={"description": "Writing fiction."}
         )
 
         lvl1, _ = GlobalLevel.objects.get_or_create(
@@ -42,7 +55,6 @@ class Command(BaseCommand):
             name="Intermediate", order=2, defaults={"description": "For learners with some experience."}
         )
 
-        # --- Organization setup ---
         # --- Organization setup ---
         org, _ = Organization.objects.get_or_create(
             name="Swahili Arts Institute",
@@ -80,10 +92,10 @@ class Command(BaseCommand):
                 "promo_video": "https://example.com/video1.mp4",
                 "creator": creator,
                 "creator_profile": creator_profile,
-                "global_category": cat1,
+                "global_subcategory": subcat1,
                 "global_level": lvl1,
                 "price": 19.99,
-                "is_published": True,
+                "status": "published",
             },
         )
 
@@ -130,10 +142,10 @@ class Command(BaseCommand):
                 "organization": org,
                 "org_category": org_cat,
                 "org_level": org_lvl,
-                "global_category": cat2,
+                "global_subcategory": subcat2,
                 "global_level": lvl2,
                 "price": 49.99,
-                "is_published": True,
+                "status": "published"
             },
         )
 
