@@ -128,6 +128,6 @@ python manage.py runserver
 
 ---
 
-## ✔️ Evuka — Built for Practical Learning
+## ✔️ Evuka — Built for Practical 
 
 Evuka transforms digital learning into an **interactive**, **organized**, and **high‑impact** experience for organizations, tutors, and students alike.
