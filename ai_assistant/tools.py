@@ -36,3 +36,23 @@ def tool_get_my_progress(user, course_id):
         return f"{enrollment.progress_percent}% completed"
     except Enrollment.DoesNotExist:
         return "Not enrolled in this course."
+
+def tool_web_search(query):
+    """
+    Searches the web for the query using DuckDuckGo.
+    Requires: pip install duckduckgo-search
+    """
+    try:
+        from duckduckgo_search import DDGS
+        results = DDGS().text(query, max_results=3)
+        if not results:
+             return "No external results found."
+        
+        summary = "External Search Results:\n"
+        for r in results:
+            summary += f"- {r['title']}: {r['body']} ({r['href']})\n"
+        return summary
+    except ImportError:
+        return "Search Error: 'duckduckgo-search' library is not installed. Please run `pip install duckduckgo-search`."
+    except Exception as e:
+        return f"Search Error: {e}"
