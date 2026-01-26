@@ -43,7 +43,7 @@ def tool_web_search(query):
     Requires: pip install duckduckgo-search
     """
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
         results = DDGS().text(query, max_results=3)
         if not results:
              return "No external results found."
@@ -52,7 +52,50 @@ def tool_web_search(query):
         for r in results:
             summary += f"- {r['title']}: {r['body']} ({r['href']})\n"
         return summary
-    except ImportError:
-        return "Search Error: 'duckduckgo-search' library is not installed. Please run `pip install duckduckgo-search`."
+    except ImportError as e:
+        return f"Search Error: Missing dependency. {e}. Please run `pip install ddgs`."
     except Exception as e:
         return f"Search Error: {e}"
+
+def tool_query_database(query):
+    """
+    Searches the internal project database (Lessons, Courses) for the query.
+    Returns formatted context.
+    """
+    from django.db.models import Q
+    
+    # 1. Search Lessons (Title, Content, Transcript)
+    # We prioritize lessons as they are the "meat" of the knowledge base.
+    lessons = Lesson.objects.filter(
+        Q(title__icontains=query) | 
+        Q(content__icontains=query) | 
+        Q(transcript__icontains=query)
+    ).select_related('module__course')[:5] # Limit to top 5 matches
+    
+    # 2. Search Courses (Title, Description)
+    courses = Course.objects.filter(
+        Q(title__icontains=query) |
+        Q(long_description__icontains=query)
+    )[:3]
+    
+    if not lessons.exists() and not courses.exists():
+        return "No internal project data found matching that query."
+        
+    results = "INTERNAL PROJECT DATABASE RESULTS:\n"
+    
+    if lessons.exists():
+        results += "--- LESSON MATCHES ---\n"
+        for l in lessons:
+            course_title = l.module.course.title if l.module and l.module.course else "Unknown Course"
+            # Extract a snippet if content is long? For now, we trust the LLM to handle it or we can truncate.
+            # Let's truncate content/transcript to avoid blowing context limits too hard in one go, 
+            # though 8k tokens is generous.
+            snippet = l.content[:500] if l.content else l.transcript[:500]
+            results += f"Lesson: {l.title} (Course: {course_title})\nSnippet: {snippet}...\n\n"
+            
+    if courses.exists():
+        results += "--- COURSE MATCHES ---\n"
+        for c in courses:
+             results += f"Course: {c.title}\nDescription: {c.short_description}\n\n"
+             
+    return results
