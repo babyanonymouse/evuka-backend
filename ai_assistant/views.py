@@ -50,15 +50,16 @@ class AskAIView(APIView):
             service = AITutorService(user=request.user, course=course)
             response_text = service.ask(message, previous_history)
             
-            # 4. Save History (Append new exchange)
+                # 4. Save History (Append new exchange)
             if chat_obj:
                 new_exchange = [
                     {'role': 'user', 'content': message},
                     {'role': 'model', 'content': response_text}
                 ]
-                chat_obj.history_json.extend(new_exchange)
-                chat_obj.save()
-
+                # Important: Reassign the list so Django knows the field changed
+                history = chat_obj.history_json
+                history.extend(new_exchange)
+                chat_obj.history_json = history
                 chat_obj.save()
 
         else:

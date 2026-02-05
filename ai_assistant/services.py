@@ -72,6 +72,8 @@ class AITutorService:
         from .tools import tool_web_search
         model = self.get_model()
         
+        logger.info(f"Received request. History length: {len(previous_history)}")
+        
         # 1. Build the System Context
         course_data = self.build_course_context()
         history_xml = self.format_history(previous_history)
@@ -88,7 +90,7 @@ class AITutorService:
             "   - Use `GOOGLE_SEARCH: <query>` for this.\n"
             "3. **Be Conversational**: Maintain a natural, friendly, and professional tone. Do not sound like a robot; respond like a helpful peer.\n"
             "4. **Historical Context**: You are provided with the conversation history. Use this to maintain continuity.\n"
-            "   - DO NOT re-introduce yourself if a conversation is already in progress.\n"
+            "   - **NO REPETITIVE GREETINGS**: Do not start responses with 'Hello', 'Hi', 'Hey', or 'Greetings' if there is prior history. Dive straight into the answer.\n"
             "   - Refer back to previous points (e.g., 'As we discussed earlier...').\n\n"
             "# TOOL USAGE RULES\n"
             "- If you need internal project facts or 'evuka' info -> Reply with `QUERY_DATABASE: <exact query>`.\n"
@@ -96,7 +98,7 @@ class AITutorService:
             "- If the answer is already in the context/history, just answer directly.\n"
             "- **Conflict Resolution**: If database and web search conflict, prioritize the database for project-specific facts.\n\n"
             "# CONSTRAINTS\n"
-            "- Always cite whether your information came from the 'Project Database' or 'Live Web Search' if you used a tool."
+            "- Do not explicitly state the source of your information (e.g., do not say '(Source: ...)'). Just provide the answer naturally."
         )
         
         prompt = f"{system_instruction}\n\nCURRENT COURSE CONTEXT (if any):\n{course_data}\n\nCONVERSATION HISTORY:\n{history_xml}\n\nSTUDENT QUESTION: {user_query}"
@@ -118,7 +120,6 @@ class AITutorService:
                 final_instruction = (
                     "You have received internal database results.\n"
                     "Integrate these results to answer the user's question.\n"
-                    "Remember to cite 'Project Database' as your source."
                 )
                 
                 final_prompt = (
@@ -150,7 +151,6 @@ class AITutorService:
                 final_instruction = (
                     "You have received external search results.\n"
                     "Integrate these results to answer the user's question.\n"
-                    "Remember to cite 'Live Web Search' as your source."
                 )
                 
                 final_prompt = (
