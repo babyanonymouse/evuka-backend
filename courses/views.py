@@ -9,7 +9,11 @@ from rest_framework.views import APIView
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
-from weasyprint import HTML
+try:
+    from weasyprint import HTML
+except OSError:
+    # Fallback for systems without libpango (like CI/CD or specific server envs)
+    HTML = None
 from django.utils import timezone
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db import transaction

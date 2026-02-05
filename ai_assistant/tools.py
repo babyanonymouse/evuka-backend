@@ -1,4 +1,32 @@
 from courses.models import Course, GlobalCategory, Enrollment
+from live.models import LiveLesson
+from django.utils import timezone
+
+def tool_check_live_schedule(course_title_query=None):
+    """
+    Checks for upcoming live lessons. 
+    If course_title_query is provided, filters by that course.
+    Returns a formatted list of the next 3 lessons.
+    """
+    now = timezone.now()
+    lessons = LiveLesson.objects.filter(
+        date__gte=now.date(), 
+        is_active=True
+    ).select_related('live_class__course').order_by('date', 'start_time')
+    
+    if course_title_query:
+        lessons = lessons.filter(live_class__course__title__icontains=course_title_query)
+        
+    lessons = lessons[:3]
+    
+    if not lessons.exists():
+        return "No upcoming live lessons found."
+        
+    results = "UPCOMING LIVE LESSONS:\n"
+    for l in lessons:
+        results += f"- {l.title} ({l.live_class.course.title}): {l.date} from {l.start_time} to {l.end_time}. Link: {l.jitsi_meeting_link}\n"
+        
+    return results
 
 def tool_search_courses(query):
     """Searches for published courses by title."""
@@ -57,45 +85,12 @@ def tool_web_search(query):
     except Exception as e:
         return f"Search Error: {e}"
 
+from ai_assistant.vector_store import VectorStoreService
+
 def tool_query_database(query):
     """
-    Searches the internal project database (Lessons, Courses) for the query.
+    Searches the internal project database (Lessons, Courses) for the query 
+    using Semantic Vector Search (ChromaDB).
     Returns formatted context.
     """
-    from django.db.models import Q
-    
-    # 1. Search Lessons (Title, Content, Transcript)
-    # We prioritize lessons as they are the "meat" of the knowledge base.
-    lessons = Lesson.objects.filter(
-        Q(title__icontains=query) | 
-        Q(content__icontains=query) | 
-        Q(transcript__icontains=query)
-    ).select_related('module__course')[:5] # Limit to top 5 matches
-    
-    # 2. Search Courses (Title, Description)
-    courses = Course.objects.filter(
-        Q(title__icontains=query) |
-        Q(long_description__icontains=query)
-    )[:3]
-    
-    if not lessons.exists() and not courses.exists():
-        return "No internal project data found matching that query."
-        
-    results = "INTERNAL PROJECT DATABASE RESULTS:\n"
-    
-    if lessons.exists():
-        results += "--- LESSON MATCHES ---\n"
-        for l in lessons:
-            course_title = l.module.course.title if l.module and l.module.course else "Unknown Course"
-            # Extract a snippet if content is long? For now, we trust the LLM to handle it or we can truncate.
-            # Let's truncate content/transcript to avoid blowing context limits too hard in one go, 
-            # though 8k tokens is generous.
-            snippet = l.content[:500] if l.content else l.transcript[:500]
-            results += f"Lesson: {l.title} (Course: {course_title})\nSnippet: {snippet}...\n\n"
-            
-    if courses.exists():
-        results += "--- COURSE MATCHES ---\n"
-        for c in courses:
-             results += f"Course: {c.title}\nDescription: {c.short_description}\n\n"
-             
-    return results
+    return VectorStoreService.search(query)

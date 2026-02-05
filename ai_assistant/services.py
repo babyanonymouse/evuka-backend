@@ -1,7 +1,7 @@
 import google.generativeai as genai
 from django.conf import settings
 import logging
-from .tools import tool_get_platform_stats, tool_list_categories, tool_search_courses, tool_get_my_progress, tool_query_database
+from .tools import tool_get_platform_stats, tool_list_categories, tool_search_courses, tool_get_my_progress, tool_query_database, tool_check_live_schedule
 from courses.models import Lesson
 
 logger = logging.getLogger(__name__)
@@ -86,16 +86,18 @@ class AITutorService:
             "# OPERATIONAL GUIDELINES\n"
             "1. **Database-First Approach**: For any query related to project specifics, internal data, or previously stored information, check the Database first.\n"
             "   - Use `QUERY_DATABASE: <query>` for this.\n"
-            "2. **Web Augmentation**: If the user asks about current events, specific external topics not found in the database, or requires real-time validation, use Google Search.\n"
+            "2. **Live Schedule**: If the user asks about upcoming live classes, meetings, or schedule changes.\n"
+            "   - Use `CHECK_SCHEDULE: <optional_course_name>`.\n"
+            "3. **Web Augmentation**: If the user asks about current events, specific external topics not found in the database, or requires real-time validation, use Google Search.\n"
             "   - Use `GOOGLE_SEARCH: <query>` for this.\n"
-            "3. **Be Conversational**: Maintain a natural, friendly, and professional tone. Do not sound like a robot; respond like a helpful peer.\n"
-            "4. **Historical Context**: You are provided with the conversation history. Use this to maintain continuity.\n"
+            "4. **Be Conversational**: Maintain a natural, friendly, and professional tone. Do not sound like a robot; respond like a helpful peer.\n"
+            "5. **Historical Context**: You are provided with the conversation history. Use this to maintain continuity.\n"
             "   - **NO REPETITIVE GREETINGS**: Do not start responses with 'Hello', 'Hi', 'Hey', or 'Greetings' if there is prior history. Dive straight into the answer.\n"
             "   - Refer back to previous points (e.g., 'As we discussed earlier...').\n\n"
             "# TOOL USAGE RULES\n"
-            "- If you need internal project facts or 'evuka' info -> Reply with `QUERY_DATABASE: <exact query>`.\n"
-            "- If you need general knowledge, technical docs, or news -> Reply with `GOOGLE_SEARCH: <exact query>`.\n"
-            "- If the answer is already in the context/history, just answer directly.\n"
+            "- Internal facts/content -> `QUERY_DATABASE: <query>`\n"
+            "- Schedule/Live Classes -> `CHECK_SCHEDULE: <course_name>`\n"
+            "- External/General/News -> `GOOGLE_SEARCH: <query>`\n"
             "- **Conflict Resolution**: If database and web search conflict, prioritize the database for project-specific facts.\n\n"
             "# CONSTRAINTS\n"
             "- Do not explicitly state the source of your information (e.g., do not say '(Source: ...)'). Just provide the answer naturally."
@@ -126,6 +128,31 @@ class AITutorService:
                     f"{system_instruction}\n\nCONVERSATION HISTORY:\n{history_xml}\n\n"
                     f"STUDENT QUESTION: {user_query}\n\n"
                     f"{db_results}\n\n"
+                    f"{final_instruction}"
+                )
+                
+                response_2 = model.generate_content(final_prompt)
+                return response_2.text
+
+            elif "CHECK_SCHEDULE:" in text_1:
+                # Handle Schedule Check
+                course_filter = text_1.split("CHECK_SCHEDULE:")[1].strip()
+                # If empty string, pass None
+                if not course_filter:
+                    course_filter = None
+                    
+                logger.info(f"AI requested Schedule: {course_filter}")
+                schedule_results = tool_check_live_schedule(course_filter)
+                
+                final_instruction = (
+                    "You have received the latest live lesson schedule.\n"
+                    "Inform the user about upcoming classes or changes.\n"
+                )
+                 
+                final_prompt = (
+                    f"{system_instruction}\n\nCONVERSATION HISTORY:\n{history_xml}\n\n"
+                    f"STUDENT QUESTION: {user_query}\n\n"
+                    f"{schedule_results}\n\n"
                     f"{final_instruction}"
                 )
                 

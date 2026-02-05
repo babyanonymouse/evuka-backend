@@ -35,7 +35,7 @@ class AskAIView(APIView):
             course = get_object_or_404(Course, id=course_id)
             
             # 2. Get/Create Chat History
-            # If anonymous, we can't save history easily.
+            # 2. Get/Create Chat History
             previous_history = []
             chat_obj = None
             
@@ -45,22 +45,35 @@ class AskAIView(APIView):
                     course=course
                 )
                 previous_history = chat_obj.history_json
+            else:
+                # Fallback: Use Django Session for anonymous testing
+                session_key = f"ai_history_{course_id}"
+                previous_history = request.session.get(session_key, [])
             
             # 3. Call AI Service
             service = AITutorService(user=request.user, course=course)
             response_text = service.ask(message, previous_history)
             
-                # 4. Save History (Append new exchange)
-            if chat_obj:
-                new_exchange = [
-                    {'role': 'user', 'content': message},
-                    {'role': 'model', 'content': response_text}
-                ]
+            # 4. Save History (Append new exchange)
+            new_exchange = [
+                {'role': 'user', 'content': message},
+                {'role': 'model', 'content': response_text}
+            ]
+
+            if request.user.is_authenticated and chat_obj:
                 # Important: Reassign the list so Django knows the field changed
                 history = chat_obj.history_json
                 history.extend(new_exchange)
                 chat_obj.history_json = history
                 chat_obj.save()
+            else:
+                # Session Save
+                session_key = f"ai_history_{course_id}"
+                # Retrieve fresh (in case of race, though unlikely here)
+                history = request.session.get(session_key, [])
+                history.extend(new_exchange)
+                request.session[session_key] = history
+                request.session.modified = True
 
         else:
             service = AISystemService(user=request.user)
